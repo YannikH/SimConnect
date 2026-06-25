@@ -18,8 +18,8 @@ class TrcGeneralGaugeNode extends LGraphNode {
   override onExecute(): void {
     const gaugeData = {
       gaugeIndex: this.properties["gaugeIndex"] ?? 0,
-      // Servo1: Math.round(this.getInputData(2, true) ?? 0),
-      // Servo2: Math.round(this.getInputData(3, true) ?? 0),
+      Servo1: Math.round(this.getInputData(2, true) ?? 1500),
+      Servo2: Math.round(this.getInputData(3, true) ?? 1500),
       light: Math.round(this.getInputData(4, true) ?? 0),
     }
     PostMessage({ type: "GaugeChanged", data: gaugeData});

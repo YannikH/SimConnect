@@ -54,11 +54,7 @@ namespace DCSBiosTRC
                 var loader = new DataLoader();
                 var obj = JObject.Parse(e.WebMessageAsJson);
                 string type = obj["type"].Value<string>();
-                string data = "";
-                if (obj.ContainsKey("data") && type != "OutputsChanged") {
-                    data = obj["data"].Value<string>();
-                }
-                WebDataReceived.Invoke(this, new WebviewDataEventArgs(type, data, obj));
+                WebDataReceived.Invoke(this, new WebviewDataEventArgs(type, obj));
             }
         }
     }
@@ -69,10 +65,9 @@ namespace DCSBiosTRC
 
         public JObject Message { get; }
 
-        public WebviewDataEventArgs(string type, string data, JObject message)
+        public WebviewDataEventArgs(string type, JObject message)
         {
             Type = type;
-            Data = data;
             Message = message;
         }
     }

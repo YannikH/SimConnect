@@ -30,6 +30,7 @@ namespace DCSBiosTRC
 #endif
             var director = new Director();
             var view = new Form1(director);
+            director.uiControl = view;
             view.WebViewLoaded += (_, wv) =>
             {
                 director.webView = wv;

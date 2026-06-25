@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -18,17 +19,18 @@ namespace DCSBiosTRC
         public TrcManager manager = new TrcManager();
         public List<int> listenAddresses = new List<int>();
         public CoreWebView2 webView;
+        public System.Windows.Forms.Control uiControl;
         public Director()
         {
-
             listener.DataReceived += (_, e) =>
             {
                 if (webView != null && listenAddresses.Contains(e.Address))
                 {
-                    webView.ExecuteScriptAsync("console.log('asdf2')");
-                    //webView.ExecuteScriptAsync("console.log('blablabla')");
-                    //string script = $"window.dcs.setData({e.Address}, {e.Data})";
-                    //webView.ExecuteScriptAsync(script);
+                    uiControl?.BeginInvoke((Action)(() => {
+                        //webView.ExecuteScriptAsync("console.log('asdf2')")
+                        string script = $"window.dcs.setData({e.Address}, {e.Data})";
+                        webView.ExecuteScriptAsync(script);
+                    }));
                 }
                 //if (e.Address == 17428)
                 //{
@@ -55,11 +57,15 @@ namespace DCSBiosTRC
                 case "GaugeChanged":
                     int gaugeIndex = e.Message["data"]["gaugeIndex"].Value<int>();
                     int light = e.Message["data"]["light"].Value<int>();
+                    int s1 = e.Message["data"]["Servo1"].Value<int>();
+                    int s2 = e.Message["data"]["Servo2"].Value<int>();
                     var gauges = manager.GetGauges();
                     if (gauges.Count > gaugeIndex)
                     {
                         Console.WriteLine($"Setting guage {gaugeIndex} light to {light}");
                         gauges[gaugeIndex].setLight(light);
+                        gauges[gaugeIndex].setServo(1, Math.Min(Math.Max(500, s1), 2500));
+                        gauges[gaugeIndex].setServo(2, Math.Min(Math.Max(500, s2), 2500));
                     }
                     break;
             }
