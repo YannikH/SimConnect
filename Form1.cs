@@ -19,19 +19,12 @@ namespace DCSBiosTRC
     public partial class Form1 : Form
     {
         private Director _director;
+        public event EventHandler<WebviewDataEventArgs> WebDataReceived;
+        public event EventHandler<CoreWebView2> WebViewLoaded;
         public Form1(Director director)
         {
             _director = director;
             InitializeComponent();
-            //var listener = new DcsBiosListener.UdpListener();
-            //listener.DataReceived += (_, e) =>
-            //{
-            //    if (webView != null && webView.CoreWebView2 != null)
-            //    {
-            //        webView.CoreWebView2.ExecuteScriptAsync($"window.dcs.setData({e.Address}, {e.Data})");
-            //    }
-            //};
-            //listener.Start();
         }
 
         private void webView21_Click(object sender, EventArgs e)
@@ -47,17 +40,8 @@ namespace DCSBiosTRC
 #endif
             if (webView != null && webView.CoreWebView2 != null)
             {
+                WebViewLoaded.Invoke(this, webView.CoreWebView2);
                 webView.CoreWebView2.Navigate(url);
-            }
-        }
-
-        private void webView_NavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs e)
-        {
-            if (webView != null && webView.CoreWebView2 != null)
-            {
-                string jsonStr = "{\"test\": \"abcd\"}";
-                webView.CoreWebView2.ExecuteScriptAsync($"console.log({jsonStr})");
-                new DataLoader().loadJsons(webView);
             }
         }
 
@@ -65,30 +49,29 @@ namespace DCSBiosTRC
         {
             if (webView != null && webView.CoreWebView2 != null)
             {
-                _director.webView = webView;
                 var loader = new DataLoader();
                 var obj = JObject.Parse(e.WebMessageAsJson);
                 string type = obj["type"].Value<string>();
-                if (type == "PageLoaded")
-                {
-                    loader.loadJsons(webView);
-                } else if (type == "OutputsChanged")
-                {
-                    List<int> addresses = obj["data"].ToObject<List<int>>();
-                    _director.listenAddresses = addresses;
+                string data = "";
+                if (obj.ContainsKey("data") && type != "OutputsChanged") {
+                    data = obj["data"].Value<string>();
                 }
-                else if (type == "GaugeChanged")
-                {
-                    int gaugeIndex = obj["data"]["gaugeIndex"].Value<int>();
-                    int light = obj["data"]["light"].Value<int>();
-                    var gauges = _director.manager.GetGauges();
-                    if (gauges.Count > gaugeIndex)
-                    {
-                        Console.WriteLine($"Setting guage {gaugeIndex} light to {light}");
-                        gauges[gaugeIndex].setLight(light);
-                    }
-                }
+                WebDataReceived.Invoke(this, new WebviewDataEventArgs(type, data, obj));
             }
+        }
+    }
+    public class WebviewDataEventArgs : EventArgs
+    {
+        public string Type { get; }
+        public string Data { get; }
+
+        public JObject Message { get; }
+
+        public WebviewDataEventArgs(string type, string data, JObject message)
+        {
+            Type = type;
+            Data = data;
+            Message = message;
         }
     }
 }

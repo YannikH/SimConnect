@@ -19,15 +19,14 @@ declare global {
           }
         | undefined;
     };
-    biosConfigs: BiosConfigV1;
     dcs: {
       setData: (address: number, data: number) => void;
-      onConfig: (name: string, data: unknown) => void;
+      onBiosConfig: (name: string, data: unknown) => void;
     };
   }
 }
 
-const onConfig = (name: string, data: unknown) => {
+const onBiosConfig = (name: string, data: unknown) => {
   const result = BiosAircraftSchemaV1.safeParse(data);
   if (!result.success) {
     console.log("Failed to decode", name, data, result);
@@ -38,7 +37,7 @@ const onConfig = (name: string, data: unknown) => {
 
 window.dcs = {
   setData: console.log,
-  onConfig: onConfig,
+  onBiosConfig: onBiosConfig,
 };
 
 if (window.chrome.webview) {

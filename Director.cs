@@ -1,10 +1,14 @@
 ﻿using DcsBiosListener;
+using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace DCSBiosTRC
 {
@@ -13,7 +17,7 @@ namespace DCSBiosTRC
         private DcsBiosListener.UdpListener listener = new DcsBiosListener.UdpListener();
         public TrcManager manager = new TrcManager();
         public List<int> listenAddresses = new List<int>();
-        public Microsoft.Web.WebView2.WinForms.WebView2 webView;
+        public CoreWebView2 webView;
         public Director()
         {
 
@@ -21,7 +25,7 @@ namespace DCSBiosTRC
             {
                 if (webView != null && listenAddresses.Contains(e.Address))
                 {
-                    webView.CoreWebView2.ExecuteScriptAsync($"window.dcs.setData({e.Address}, {e.Data})");
+                    webView.ExecuteScriptAsync($"window.dcs.setData({e.Address}, {e.Data})");
                 }
                 //if (e.Address == 17428)
                 //{
@@ -31,6 +35,30 @@ namespace DCSBiosTRC
                 //}
             };
             listener.Start();
+        }
+        public void WebviewDataReceived(object sender, WebviewDataEventArgs e)
+        {
+            if (webView == null) return;
+            switch (e.Type) {
+                case "PageLoaded":
+                    var loader = new DataLoader();
+                    loader.loadBiosJsons(webView);
+                    break;
+                case "OutputsChanged":
+                    List<int> addresses = e.Message.ToObject<List<int>>();
+                    listenAddresses = addresses;
+                    break;
+                case "GaugeChanged":
+                    int gaugeIndex = e.Message["data"]["gaugeIndex"].Value<int>();
+                    int light = e.Message["data"]["light"].Value<int>();
+                    var gauges = manager.GetGauges();
+                    if (gauges.Count > gaugeIndex)
+                    {
+                        Console.WriteLine($"Setting guage {gaugeIndex} light to {light}");
+                        gauges[gaugeIndex].setLight(light);
+                    }
+                    break;
+            }
         }
     }
 }

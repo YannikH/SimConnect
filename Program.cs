@@ -15,6 +15,8 @@ namespace DCSBiosTRC
         [STAThread]
         static void Main()
         {
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
 
 #if DEBUG
             Process.Start(new ProcessStartInfo
@@ -26,9 +28,13 @@ namespace DCSBiosTRC
             });
 #endif
             var director = new Director();
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Form1(director));
+            var view = new Form1(director);
+            view.WebViewLoaded += (_, wv) =>
+            {
+                director.webView = wv;
+            };
+            view.WebDataReceived += director.WebviewDataReceived;
+            Application.Run(view);
         }
     }
 }
