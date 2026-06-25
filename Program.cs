@@ -19,10 +19,11 @@ namespace DCSBiosTRC
             Application.SetCompatibleTextRenderingDefault(false);
 
 #if DEBUG
+            var path = System.IO.Path.GetFullPath(System.IO.Path.Combine(Application.StartupPath, @"..\..\serve_web.py"));
             Process.Start(new ProcessStartInfo
             {
                 FileName = "py",
-                Arguments = System.IO.Path.Combine(Application.StartupPath, @"..\..\serve_web.py"),
+                Arguments = $"\"{path}\"",
                 UseShellExecute = true,
                 CreateNoWindow = false,
             });

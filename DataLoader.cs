@@ -18,7 +18,8 @@ namespace DCSBiosTRC
         }
         string getDcsbiosPath()
         {
-            return "C:/Users/yanni/Saved Games/DCS/Scripts/DCS-BIOS/doc/json";
+            string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            return $"{userProfile}/Saved Games/DCS/Scripts/DCS-BIOS/doc/json";
         }
 
         public string getFileContent(string path)

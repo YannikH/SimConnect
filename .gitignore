@@ -1,1 +1,4 @@
 bin/*
+packages/*
+.vs/*
+obj/Debug/*

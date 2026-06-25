@@ -105,8 +105,8 @@ namespace DcsBiosListener
 
         private void ListenLoop(CancellationToken token)
         {
-            using (StreamWriter sw = new StreamWriter("C:/SentPackets.txt"))
-            {
+            //using (StreamWriter sw = new StreamWriter("C:/SentPackets.txt"))
+            //{
                 var remoteEp = new IPEndPoint(IPAddress.Any, 0);
 
                 while (!token.IsCancellationRequested)
@@ -128,17 +128,17 @@ namespace DcsBiosListener
 
                     try
                     {
-                        ProcessPacket(packet, sw);
+                        ProcessPacket(packet);
                     }
                     catch (Exception ex)
                     {
                         Console.Error.WriteLine($"[DCS-BIOS] ProcessPacket error: {ex.Message}");
                     }
                 }
-            }
+            //}
         }
 
-        private void ProcessPacket(byte[] packet, StreamWriter sw)
+        private void ProcessPacket(byte[] packet/*, StreamWriter sw*/)
         {
             int i = 0;
             while (i + 4 <= packet.Length)
@@ -167,7 +167,7 @@ namespace DcsBiosListener
                     ushort data = (ushort)(packet[i + j] | (packet[i + j + 1] << 8));
                     DataReceived?.Invoke(this, new DcsBiosDataEventArgs(addr, data));
                     long timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                    sw.WriteLine($"${timestamp}:{addr}:{data}");
+                    //sw.WriteLine($"${timestamp}:{addr}:{data}");
                 }
 
                 i += (int)count;
