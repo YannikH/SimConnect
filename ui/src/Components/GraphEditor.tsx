@@ -5,6 +5,7 @@ import { LGraph, LGraphCanvas, LiteGraph } from "litegraph.js";
 import "litegraph.js/css/litegraph.css";
 import { OutputNode } from "../Data/NodeLoader";
 import { PostMessage } from "../Data/WebviewHandler";
+import { Button } from "@mui/material";
 
 const CACHE_NAME = "BIOS_GRAPH_CACHE";
 
@@ -23,6 +24,7 @@ class LGraphExtended extends LGraph {
   }
 
   onData(address: number, value: number) {
+    console.log("DATA RECEIVED", address, value);
     for (const node of this.GetAllOutputs()) {
       const output = node.biosOutput;
       if (output.address === address) {
@@ -37,9 +39,12 @@ class LGraphExtended extends LGraph {
   }
 
   afterChange(): void {
+    this.broadcastOutputs();
+  }
+
+  broadcastOutputs(): void {
     const outAddresses = this.GetAllOutputs().map((o) => o.biosOutput.address);
     PostMessage({ type: "OutputsChanged", data: outAddresses });
-    localStorage.setItem(CACHE_NAME, JSON.stringify(this.serialize()));
   }
 }
 
@@ -47,11 +52,17 @@ class LitegraphManager {
   readonly graph = new LGraphExtended();
   private canvas?: LGraphCanvas;
 
-  constructor() {
+  loadCache() {
     const cache = localStorage.getItem(CACHE_NAME);
     if (cache) {
-      this.graph.load(cache);
+      console.log("LOADING", cache);
+      this.graph.configure(JSON.parse(cache));
     }
+    this.graph.broadcastOutputs();
+  }
+
+  saveCache() {
+    localStorage.setItem(CACHE_NAME, JSON.stringify(this.graph.serialize()));
   }
 
   startCanvas(canvasEl: HTMLCanvasElement) {
@@ -84,8 +95,14 @@ const GraphEditor = () => {
   }, [lgManager]);
 
   return (
-    <Flex $fullHeight $fullWidth>
-      <canvas ref={canvasRef} width="1024" height="720" />
+    <Flex $fullHeight $fullWidth $column>
+      <Flex $row $fullWidth style={{height: "30px"}}>
+        <Button onClick={() => lgManager.loadCache()} variant="contained">Load</Button>
+        <Button onClick={() => lgManager.saveCache()} variant="contained">Save</Button>
+      </Flex>
+      <Flex $grow $hideOverflow>
+        <canvas ref={canvasRef} width="1024" height="720" />
+      </Flex>
     </Flex>
   );
 };

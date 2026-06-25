@@ -25,7 +25,10 @@ namespace DCSBiosTRC
             {
                 if (webView != null && listenAddresses.Contains(e.Address))
                 {
-                    webView.ExecuteScriptAsync($"window.dcs.setData({e.Address}, {e.Data})");
+                    webView.ExecuteScriptAsync("console.log('asdf2')");
+                    //webView.ExecuteScriptAsync("console.log('blablabla')");
+                    //string script = $"window.dcs.setData({e.Address}, {e.Data})";
+                    //webView.ExecuteScriptAsync(script);
                 }
                 //if (e.Address == 17428)
                 //{
@@ -39,13 +42,14 @@ namespace DCSBiosTRC
         public void WebviewDataReceived(object sender, WebviewDataEventArgs e)
         {
             if (webView == null) return;
+            webView.ExecuteScriptAsync("console.log('asdf')");
             switch (e.Type) {
                 case "PageLoaded":
                     var loader = new DataLoader();
                     loader.loadBiosJsons(webView);
                     break;
                 case "OutputsChanged":
-                    List<int> addresses = e.Message.ToObject<List<int>>();
+                    List<int> addresses = e.Message["data"].ToObject<List<int>>();
                     listenAddresses = addresses;
                     break;
                 case "GaugeChanged":

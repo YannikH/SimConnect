@@ -49,6 +49,8 @@ namespace DCSBiosTRC
         {
             if (webView != null && webView.CoreWebView2 != null)
             {
+                webView.ExecuteScriptAsync("console.log('test1')");
+                WebViewLoaded.Invoke(this, webView.CoreWebView2);
                 var loader = new DataLoader();
                 var obj = JObject.Parse(e.WebMessageAsJson);
                 string type = obj["type"].Value<string>();
