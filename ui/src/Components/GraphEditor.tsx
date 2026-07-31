@@ -24,7 +24,6 @@ class LGraphExtended extends LGraph {
   }
 
   onData(address: number, value: number) {
-    console.log("DATA RECEIVED", address, value);
     for (const node of this.GetAllOutputs()) {
       const output = node.biosOutput;
       if (output.address === address) {
@@ -81,7 +80,6 @@ class LitegraphManager {
       return types;
       // return [];
     };
-    console.log('Starting graph');
     this.graph.start(10);
     this.loadCache();
   }
@@ -100,13 +98,15 @@ const GraphEditor = () => {
   }, [lgManager]);
 
   return (
-    <Flex $fullHeight $fullWidth $column>
+    <Flex $fullHeight $grow $hideOverflow $column>
       <Flex $row $fullWidth style={{height: "30px"}}>
         <Button onClick={() => lgManager.loadCache()} variant="contained">Load</Button>
         <Button onClick={() => lgManager.saveCache()} variant="contained">Save</Button>
       </Flex>
-      <Flex $grow $hideOverflow>
-        <canvas ref={canvasRef} width="1024" height="720" />
+      <Flex $grow $hideOverflow $fullWidth>
+        <Flex $fullWidth $fullHeight>
+          <canvas ref={canvasRef} width="1024" height="720" />
+        </Flex>
       </Flex>
     </Flex>
   );

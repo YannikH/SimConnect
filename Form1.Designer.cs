@@ -40,11 +40,11 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.webView.CreationProperties = null;
             this.webView.DefaultBackgroundColor = System.Drawing.Color.White;
-            this.webView.Location = new System.Drawing.Point(0, -1);
+            this.webView.Location = new System.Drawing.Point(0, -2);
             this.webView.Margin = new System.Windows.Forms.Padding(0);
             this.webView.Name = "webView";
-            this.webView.Size = new System.Drawing.Size(789, 601);
-            this.webView.Source = new System.Uri("http://localhost:5173/", System.UriKind.Absolute);
+            this.webView.Size = new System.Drawing.Size(1184, 925);
+            this.webView.Source = new System.Uri("http://nothing", System.UriKind.Absolute);
             this.webView.TabIndex = 0;
             this.webView.ZoomFactor = 1D;
             this.webView.CoreWebView2InitializationCompleted += new System.EventHandler<Microsoft.Web.WebView2.Core.CoreWebView2InitializationCompletedEventArgs>(this.webView_CoreWebView2InitializationCompleted);
@@ -53,12 +53,13 @@
             // 
             // Form1
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.ClientSize = new System.Drawing.Size(789, 598);
+            this.ClientSize = new System.Drawing.Size(1184, 920);
             this.Controls.Add(this.webView);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
+            this.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.Name = "Form1";
             this.Text = "DCSBios TRCConnect";
             ((System.ComponentModel.ISupportInitialize)(this.webView)).EndInit();

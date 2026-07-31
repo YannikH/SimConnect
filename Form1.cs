@@ -1,17 +1,18 @@
-﻿using System;
+﻿using DcsBiosListener;
+using Microsoft.Web.WebView2.Core;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using DcsBiosListener;
-using Microsoft.Web.WebView2.Core;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.Rebar;
 
 namespace DCSBiosTRC
@@ -32,11 +33,19 @@ namespace DCSBiosTRC
 
         }
 
-        private void webView_CoreWebView2InitializationCompleted(object sender, Microsoft.Web.WebView2.Core.CoreWebView2InitializationCompletedEventArgs e)
+        private async void webView_CoreWebView2InitializationCompleted(object sender, Microsoft.Web.WebView2.Core.CoreWebView2InitializationCompletedEventArgs e)
         {
-            string url = "";
+            await webView.EnsureCoreWebView2Async();
+            string folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "dist");
+            webView.CoreWebView2.SetVirtualHostNameToFolderMapping(
+                "dcs.trc",
+                folder, // @"C:\Work\SimConnect\ui\dist", 
+                CoreWebView2HostResourceAccessKind.Allow
+            );
+
+            string url = "https://dcs.trc/index.html";
 #if DEBUG
-            url = "http://localhost:5173/";
+            url = "http://localhost:5173";
 #endif
             if (webView != null && webView.CoreWebView2 != null)
             {

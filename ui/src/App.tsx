@@ -45,10 +45,12 @@ const saveConfigName = (name: string) => {
 const onBiosConfig = (name: string, data: unknown, save = true) => {
   console.log('loading bios config', name, data);
   if (name === 'AircraftAliases') return;
-  if (save) {
+  if (save && name.includes('FA-18') || name.includes('F-16')) {
     saveConfigName(name);
     localStorage.setItem(name, JSON.stringify(data));
-  };
+  } else {
+    localStorage.setItem(name, '');
+  }
   const result = BiosAircraftSchemaV1.safeParse(data);
   if (!result.success) {
     console.log("Failed to decode", name, data, result);
