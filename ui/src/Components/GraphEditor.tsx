@@ -44,6 +44,7 @@ class LGraphExtended extends LGraph {
 
   broadcastOutputs(): void {
     const outAddresses = this.GetAllOutputs().map((o) => o.biosOutput.address);
+    console.log('outputs changed', outAddresses);
     PostMessage({ type: "OutputsChanged", data: outAddresses });
   }
 }
@@ -57,6 +58,7 @@ class LitegraphManager {
     if (cache) {
       console.log("LOADING", cache);
       this.graph.configure(JSON.parse(cache));
+      this.graph.start(10);
     }
     this.graph.broadcastOutputs();
   }
@@ -79,6 +81,9 @@ class LitegraphManager {
       return types;
       // return [];
     };
+    console.log('Starting graph');
+    this.graph.start(10);
+    this.loadCache();
   }
   stop() {}
 }

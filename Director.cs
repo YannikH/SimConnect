@@ -27,7 +27,6 @@ namespace DCSBiosTRC
                 if (webView != null && listenAddresses.Contains(e.Address))
                 {
                     uiControl?.BeginInvoke((Action)(() => {
-                        //webView.ExecuteScriptAsync("console.log('asdf2')")
                         string script = $"window.dcs.setData({e.Address}, {e.Data})";
                         webView.ExecuteScriptAsync(script);
                     }));
@@ -40,15 +39,32 @@ namespace DCSBiosTRC
                 //}
             };
             listener.Start();
+
+            manager.OnGaugesChanged += (s, gauges) =>
+            {
+                var gaugeInfo = gauges.Select(g => new
+                {
+                    productID = g.ProductID,
+                    vendorID = g.VendorID,
+                    versionNumber = g.VersionNumber
+                }).ToList();
+                string json = JsonConvert.SerializeObject(gaugeInfo);
+                var script = $"window.trc.setGauges({json})";
+                Console.WriteLine(script);
+                uiControl?.BeginInvoke((Action)(() =>
+                {
+                    webView?.ExecuteScriptAsync(script);
+                }));
+            };
         }
         public void WebviewDataReceived(object sender, WebviewDataEventArgs e)
         {
             if (webView == null) return;
-            webView.ExecuteScriptAsync("console.log('asdf')");
             switch (e.Type) {
                 case "PageLoaded":
                     var loader = new DataLoader();
                     loader.loadBiosJsons(webView);
+                    manager.RebuildGaugeList();
                     break;
                 case "OutputsChanged":
                     List<int> addresses = e.Message["data"].ToObject<List<int>>();

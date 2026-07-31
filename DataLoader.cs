@@ -45,11 +45,11 @@ namespace DCSBiosTRC
         public void loadBiosJsons(CoreWebView2 view)
         {
             view.ExecuteScriptAsync("window.biosConfigs = {}");
-            string[] fileNames = Directory.GetFiles(getDcsbiosPath());
-            foreach (string path in fileNames)
+            string[] folderFileNames = Directory.GetFiles(getDcsbiosPath());
+            var configFileNames = folderFileNames.Where(f => f.Contains(".json"));
+            foreach (string path in configFileNames)
             {
                 string fileName = Path.GetFileName(path);
-                if (!fileName.Contains(".json")) continue;
                 string aircraftName = fileName.Replace(".json", "");
                 var text = File.ReadAllText(path);
                 string script = $"window.dcs.onBiosConfig('{aircraftName}', {text})";

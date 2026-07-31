@@ -1,15 +1,12 @@
-import { useState } from "react";
 import {
   BiosAircraftSchemaV1,
-  BiosConfigSchemaV1,
-  buildOutputsByAddress,
-  type BiosConfigV1,
-  type OutputMatch,
 } from "./Data/BiosJson";
 import { Flex } from "./Components/Structure";
 import GraphEditor from "./Components/GraphEditor";
+import GaugeList from "./Components/GaugeList";
 import { LoadAircraftNodes } from "./Data/NodeLoader";
 
+const DCS_FILENAMES_KEY = 'DCS_FILE_NAMES';
 declare global {
   interface Window {
     chrome: {
@@ -23,10 +20,35 @@ declare global {
       setData: (address: number, data: number) => void;
       onBiosConfig: (name: string, data: unknown) => void;
     };
+    trc: {
+      setGauges: (data: unknown) => void;
+    };
   }
 }
 
-const onBiosConfig = (name: string, data: unknown) => {
+const getNamesList = (): string[] => {
+  try {
+    const namesList = JSON.parse(localStorage.getItem(DCS_FILENAMES_KEY) ?? '[]');
+    return Array.isArray(namesList) ? namesList : [];
+  } catch {
+    console.log('Names list could not be parsed');
+    return [];
+  }
+};
+
+const saveConfigName = (name: string) => {
+  const namesList = getNamesList();
+  const newList = [...new Set([...namesList, name])];
+  localStorage.setItem(DCS_FILENAMES_KEY, JSON.stringify(newList));
+};
+
+const onBiosConfig = (name: string, data: unknown, save = true) => {
+  console.log('loading bios config', name, data);
+  if (name === 'AircraftAliases') return;
+  if (save) {
+    saveConfigName(name);
+    localStorage.setItem(name, JSON.stringify(data));
+  };
   const result = BiosAircraftSchemaV1.safeParse(data);
   if (!result.success) {
     console.log("Failed to decode", name, data, result);
@@ -35,63 +57,41 @@ const onBiosConfig = (name: string, data: unknown) => {
   LoadAircraftNodes(name, result.data);
 };
 
+const loadBiosConfigCache = () => {
+  for (const name of getNamesList()) {
+    try {
+      const configObject = JSON.parse(localStorage.getItem(name) ?? '');
+      console.log('Loading bios config nodes from cache: ', name, configObject);
+      onBiosConfig(name, configObject, false);
+    } catch (e){
+      console.log('Config could not be parsed', name, e);
+    }
+  }
+};
+
 window.dcs = {
   setData: console.log,
   onBiosConfig: onBiosConfig,
 };
 
+window.trc = {
+  setGauges: console.log,
+}
+
 if (window.chrome.webview) {
   window.chrome.webview.postMessage({ type: "PageLoaded" });
 }
 
-type biosData = { [key: string]: number };
-
 function App() {
-  const [config, setConfig] = useState<BiosConfigV1 | undefined>();
-  const [biosData, setBiosData] = useState<biosData>({});
-  const [outputMap, setOutputMap] = useState<Record<number, OutputMatch[]>>({});
-  const attemptParse = () => {
-    const parseResult = BiosConfigSchemaV1.safeParse(window.biosConfigs);
-    if (parseResult.success) {
-      setConfig(parseResult.data);
-      setOutputMap(buildOutputsByAddress(parseResult.data));
-      console.log(buildOutputsByAddress(parseResult.data));
-    }
-  };
-
-  const dataChange = (address: number, data: number) => {
-    console.log(address, data);
-    const outputs = outputMap[address];
-    const newBiosData = { ...biosData };
-    for (const output of outputs) {
-      if (output.output.type === "integer") {
-        newBiosData[output.controlIdentifier] = data & output.output.mask;
-      } else {
-        newBiosData[output.controlIdentifier] = data;
-      }
-    }
-    setBiosData(newBiosData);
-  };
-
-  // eslint-disable-next-line react-hooks/immutability
-  window.dcs.setData = dataChange;
-
+  loadBiosConfigCache();
   return (
     <Flex $column $fullHeight $fullWidth>
-      <GraphEditor />
-      {/* <button onClick={attemptParse}>ATTEMPT PARSE</button>
-      <Flex $row $grow $hideOverflow>
-        {config && <ConfigView config={config} />}
-        <Flex $column $scroll>
-          Data:
-          {Object.keys(biosData).map((k) => (
-            <>
-              {k}: {biosData[k]}
-              <br />
-            </>
-          ))}
+      <Flex $row $fullHeight>
+        <GraphEditor />
+        <Flex $column>
+          <GaugeList />
         </Flex>
-      </Flex> */}
+      </Flex>
     </Flex>
   );
 }

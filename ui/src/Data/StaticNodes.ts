@@ -8,19 +8,23 @@ class TrcGeneralGaugeNode extends LGraphNode {
     super();
       const values = [...new Array(10)].map((_, index) => index);
       this.addWidget("combo","TRC Gauge", values[0], () => {}, { values, property: "gaugeIndex"} );
-      this.addInput("Pointer1", "number");
-      this.addInput("Pointer2", "number");
+      // this.addInput("Pointer1", "number");
+      // this.addInput("Pointer2", "number");
       this.addInput("Servo1", "number");
       this.addInput("Servo2", "number");
       this.addInput("Light", "number");
   }
 
+  override onConnectionsChange(): void {
+    this.onExecute();
+  }
+
   override onExecute(): void {
     const gaugeData = {
       gaugeIndex: this.properties["gaugeIndex"] ?? 0,
-      Servo1: Math.round(this.getInputData(2, true) ?? 1500),
-      Servo2: Math.round(this.getInputData(3, true) ?? 1500),
-      light: Math.round(this.getInputData(4, true) ?? 0),
+      Servo1: Math.round(this.getInputData(0, true) ?? 1500),
+      Servo2: Math.round(this.getInputData(1, true) ?? 1500),
+      light: Math.round(this.getInputData(2, true) ?? 0),
     }
     PostMessage({ type: "GaugeChanged", data: gaugeData});
   }
@@ -28,6 +32,12 @@ class TrcGeneralGaugeNode extends LGraphNode {
 TrcGeneralGaugeNode.title = "GeneralGauge";
 
 class MathNode extends CustomNode {
+  override onPropertyChanged(): void | boolean {
+    this.onExecute();
+  }
+  override onConnectionsChange(): void {
+    this.onExecute();
+  }
   override onExecute(): void {
     const a = this.getInputData(0, true);
     const b = this.getInputData(1, true);
@@ -57,8 +67,13 @@ class Number extends LGraphNode {
       }, {property: "value"});
       this.addOutput("Out", "number");
   }
+  override onPropertyChanged(): void | boolean {
+    this.onExecute();
+  }
+  override onConnectionsChange(): void {
+    this.onExecute();
+  }
   onExecute(): void {
-    
     this.setOutputData(0, this.properties["value"]);
   }
 }

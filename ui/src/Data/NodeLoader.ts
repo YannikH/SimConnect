@@ -20,9 +20,9 @@ export const LoadAircraftNodes = (name: string, data: BiosAircraftV1) => {
 }
 
 export class OutputNode extends CustomNode {
-  aircraft: string;
-  category: string;
-  biosOutput: IntegerOutputV1;
+  aircraft!: string;
+  category!: string;
+  biosOutput!: IntegerOutputV1;
   valueRaw?: number;
   value?: number;
 
@@ -56,7 +56,7 @@ export class OutputNode extends CustomNode {
 const registerOutputNode = (aircraft: string, category: string, output: IntegerOutputV1) => {
   if (!output.address_identifier || output.type !== "integer") return;
   const NewNode = class extends OutputNode {
-    title = output.address_identifier;
+    title = output.address_identifier ?? '';
     aircraft = aircraft;
     category = category;
     biosOutput = output;
