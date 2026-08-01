@@ -89,7 +89,72 @@ namespace DcsBiosListener
             }
         }
 
-        public async Task SetGauge(string gaugeType, int gaugeIndex, JObject data)
+        private static readonly TimeSpan GaugeUpdateInterval = TimeSpan.FromMilliseconds(50);
+        private readonly Dictionary<int, GaugeUpdateState> pendingGaugeUpdates = new Dictionary<int, GaugeUpdateState>();
+
+        private class GaugeUpdateState
+        {
+            public string GaugeType;
+            public JObject Data;
+            public bool HasPending;
+            public bool IsRunning;
+        }
+
+        public Task SetGauge(string gaugeType, int gaugeIndex, JObject data)
+        {
+            GaugeUpdateState state;
+            lock (pendingGaugeUpdates)
+            {
+                if (!pendingGaugeUpdates.TryGetValue(gaugeIndex, out state))
+                {
+                    state = new GaugeUpdateState();
+                    pendingGaugeUpdates[gaugeIndex] = state;
+                }
+                state.GaugeType = gaugeType;
+                state.Data = data;
+                state.HasPending = true;
+
+                if (state.IsRunning) return Task.CompletedTask;
+                state.IsRunning = true;
+            }
+
+            return PumpGaugeUpdates(gaugeIndex, state);
+        }
+
+        private async Task PumpGaugeUpdates(int gaugeIndex, GaugeUpdateState state)
+        {
+            try
+            {
+                while (true)
+                {
+                    string gaugeType;
+                    JObject data;
+                    lock (pendingGaugeUpdates)
+                    {
+                        gaugeType = state.GaugeType;
+                        data = state.Data;
+                        state.HasPending = false;
+                    }
+
+                    await ApplyGaugeUpdate(gaugeType, gaugeIndex, data);
+                    await Task.Delay(GaugeUpdateInterval);
+
+                    lock (pendingGaugeUpdates)
+                    {
+                        if (!state.HasPending) return;
+                    }
+                }
+            }
+            finally
+            {
+                lock (pendingGaugeUpdates)
+                {
+                    state.IsRunning = false;
+                }
+            }
+        }
+
+        private async Task ApplyGaugeUpdate(string gaugeType, int gaugeIndex, JObject data)
         {
             if (gaugeIndex < 0 || gaugeIndex >= devices.Count) return;
             if (devices[gaugeIndex] == null) return;
