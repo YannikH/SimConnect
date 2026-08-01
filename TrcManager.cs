@@ -36,7 +36,7 @@ namespace DcsBiosListener
             deviceRemovalWatcher.Start();
         }
 
-        public void RebuildGaugeList()
+        public async void RebuildGaugeList()
         {
             Core.FindDevices();
 
@@ -46,18 +46,29 @@ namespace DcsBiosListener
                 dev0200 gauge = Core.gauge_trc02[i];
                 if (gauge != null)
                 {
+                    await gauge.loadCalibration();
                     found.Add(gauge);
                 }
             }
             if (Core.trc0286 != null)
             {
-                Core.trc0286.loadCalibration();
+                await Core.trc0286.loadCalibration();
                 found.Add(Core.trc0286);
             }
             if (Core.trc0287 != null)
             {
-                Core.trc0287.loadCalibration();
+                await Core.trc0287.loadCalibration();
                 found.Add(Core.trc0287);
+            }
+            if (Core.trc0288 != null)
+            {
+                await Core.trc0288.loadCalibration();
+                found.Add(Core.trc0288);
+            }
+            if (Core.trc0289 != null)
+            {
+                await Core.trc0289.loadCalibration();
+                found.Add(Core.trc0289);
             }
 
             devices = found;
@@ -99,29 +110,36 @@ namespace DcsBiosListener
                 case "Altimeter":
                     if (devices[gaugeIndex] is dev0286 altimeter)
                     {
-                        int result;
-                        double pot100ft = 0;
-                        double pot1k = 0;
-                        double pot10k = 0;
-                        if ((result = await altimeter.requestPotmeter(0)) >= 0)
-                        {
-                            pot100ft = result / 1200.0 * 1000.0;
-                        }
-                        if ((result = await altimeter.requestPotmeter(1)) >= 0)
-                        {
-                            pot1k = result / 1200.0 * 1000.0;
-                        }
-                        if ((result = await altimeter.requestPotmeter(2)) >= 0)
-                        {
-                            pot10k = result / 1200.0 * 1000.0;
-                        }
-                        double altFt = (pot10k * 10.0) + pot1k + (pot100ft / 10.0);
-                        Console.WriteLine($"Updating {pot10k} {pot1k} {pot100ft} {altFt}");
+                        //int result;
+                        //double pot1 = 0;
+                        //double pot2 = 0;
+                        //if ((result = await altimeter.requestPotmeter(0)) >= 0)
+                        //{
+                        //    pot1 = result;
+                        //}
+                        //if ((result = await altimeter.requestPotmeter(1)) >= 0)
+                        //{
+                        //    pot2 = result;
+                        //}
+                        //double pot10k = pot1 == 0 ? pot2 : pot1;
+                        ////double altFt = (pot10k * 10.0) + pot1k + (pot100ft / 10.0);
+                        //Console.WriteLine($"Updating {pot10k}");
+                        int altLow = await altimeter.getAltiHigh();
+                        Console.WriteLine($"AL {altLow}");
                         int light = data["light"].Value<int>();
                         altimeter.setLight(light);
-                        altimeter.setServo(1, 1480 - 5);
+                        altimeter.setServo(1, 1480 - 100);
                         //altimeter.setServo(2, 1000);
                         //const int desiredAlt = 4500;
+                    }
+                    break;
+                case "HeadingIndicator":
+                    if (devices[gaugeIndex] is dev0288 headingIndicator)
+                    {
+                        float direction = data["direction"].Value<float>();
+                        await headingIndicator.setCompass(direction);
+                        int light = data["light"].Value<int>();
+                        headingIndicator.setLight(light);
                     }
                     break;
             }
@@ -140,6 +158,8 @@ namespace DcsBiosListener
                     return "General";
                 case dev0286 _:
                     return "Altimeter";
+                case dev0288 _:
+                    return "HeadingIndicator";
                 default:
                     return "Unknown";
             }

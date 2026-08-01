@@ -36,6 +36,8 @@ class TrcAltimeterNode extends LGraphNode {
   title = "GeneralGauge";
   constructor() {
     super();
+    const values = [...new Array(10)].map((_, index) => index);
+    this.addWidget("combo","TRC Gauge", values[0], () => {}, { values, property: "gaugeIndex"} );
     this.addInput("Altitude (ft)", "number");
     this.addInput("Light", "number");
   }
@@ -47,7 +49,7 @@ class TrcAltimeterNode extends LGraphNode {
   override onExecute(): void {
     const gaugeData = {
       gaugeType: "Altimeter",
-      gaugeIndex: 0,
+      gaugeIndex: this.properties["gaugeIndex"] ?? 0,
       AltFt: Math.round(this.getInputData(0, true) ?? 0),
       light: Math.round(this.getInputData(1, true) ?? 0),
     }
@@ -55,6 +57,32 @@ class TrcAltimeterNode extends LGraphNode {
   }
 }
 TrcAltimeterNode.title = "Altimeter";
+
+class TrcHeadingIndicatorNode extends LGraphNode {
+  title = "HeadingIndicator";
+  constructor() {
+    super();
+    const values = [...new Array(10)].map((_, index) => index);
+    this.addWidget("combo","TRC Gauge", values[0], () => {}, { values, property: "gaugeIndex"} );
+    this.addInput("Direction", "number");
+    this.addInput("Light", "number");
+  }
+
+  override onConnectionsChange(): void {
+    this.onExecute();
+  }
+
+  override onExecute(): void {
+    const gaugeData = {
+      gaugeType: "HeadingIndicator",
+      gaugeIndex: this.properties["gaugeIndex"] ?? 0,
+      direction: this.getInputData(0, true) ?? 0,
+      light: Math.round(this.getInputData(1, true) ?? 0),
+    }
+    PostMessage({ type: "GaugeChanged", data: gaugeData});
+  }
+}
+TrcHeadingIndicatorNode.title = "HeadingIndicator";
 
 class MathNode extends CustomNode {
   override onPropertyChanged(): void | boolean {
@@ -181,6 +209,10 @@ export const Load = () => {
   LiteGraph.registerNodeType(
     "TRC/Altimeter",
     TrcAltimeterNode
+  );
+  LiteGraph.registerNodeType(
+    "TRC/HeadingIndicator",
+    TrcHeadingIndicatorNode
   );
   LiteGraph.registerNodeType(
     "Math/Number",
