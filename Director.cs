@@ -59,7 +59,7 @@ namespace DCSBiosTRC
                 }));
             };
         }
-        public void WebviewDataReceived(object sender, WebviewDataEventArgs e)
+        public async void WebviewDataReceived(object sender, WebviewDataEventArgs e)
         {
             if (webView == null) return;
             switch (e.Type) {
@@ -75,7 +75,14 @@ namespace DCSBiosTRC
                 case "GaugeChanged":
                     string gaugeType = e.Message["data"]["gaugeType"].Value<string>();
                     int gaugeIndex = e.Message["data"]["gaugeIndex"].Value<int>();
-                    manager.SetGauge(gaugeType, gaugeIndex, (JObject)e.Message["data"]);
+                    try
+                    {
+                        await manager.SetGauge(gaugeType, gaugeIndex, (JObject)e.Message["data"]);
+                    }
+                    catch (System.IO.IOException ex)
+                    {
+                        Console.WriteLine("Gauge disconnected");
+                    }
                     break;
             }
         }

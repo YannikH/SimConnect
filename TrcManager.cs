@@ -89,10 +89,10 @@ namespace DcsBiosListener
             }
         }
 
-        public async void SetGauge(string gaugeType, int gaugeIndex, JObject data)
+        public async Task SetGauge(string gaugeType, int gaugeIndex, JObject data)
         {
             if (gaugeIndex < 0 || gaugeIndex >= devices.Count) return;
-
+            if (devices[gaugeIndex] == null) return;
             switch (gaugeType)
             {
                 case "General":
@@ -124,11 +124,11 @@ namespace DcsBiosListener
                         //double pot10k = pot1 == 0 ? pot2 : pot1;
                         ////double altFt = (pot10k * 10.0) + pot1k + (pot100ft / 10.0);
                         //Console.WriteLine($"Updating {pot10k}");
-                        int altLow = await altimeter.getAltiHigh();
-                        Console.WriteLine($"AL {altLow}");
-                        int light = data["light"].Value<int>();
-                        altimeter.setLight(light);
-                        altimeter.setServo(1, 1480 - 100);
+                        //int altLow = await altimeter.getAltiHigh();
+                        //Console.WriteLine($"AL {altLow}");
+                        //int light = data["light"].Value<int>();
+                        //altimeter.setLight(light);
+                        //altimeter.setServo(1, 1480 - 100);
                         //altimeter.setServo(2, 1000);
                         //const int desiredAlt = 4500;
                     }
