@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using TrcSdkLib;
 
 namespace DCSBiosTRC
 {
@@ -44,6 +45,7 @@ namespace DCSBiosTRC
             {
                 var gaugeInfo = gauges.Select(g => new
                 {
+                    gaugeType = TrcManager.GetGaugeType(g),
                     productID = g.ProductID,
                     vendorID = g.VendorID,
                     versionNumber = g.VersionNumber
@@ -71,18 +73,9 @@ namespace DCSBiosTRC
                     listenAddresses = addresses;
                     break;
                 case "GaugeChanged":
+                    string gaugeType = e.Message["data"]["gaugeType"].Value<string>();
                     int gaugeIndex = e.Message["data"]["gaugeIndex"].Value<int>();
-                    int light = e.Message["data"]["light"].Value<int>();
-                    int s1 = e.Message["data"]["Servo1"].Value<int>();
-                    int s2 = e.Message["data"]["Servo2"].Value<int>();
-                    var gauges = manager.GetGauges();
-                    if (gauges.Count > gaugeIndex)
-                    {
-                        Console.WriteLine($"Setting guage {gaugeIndex} light to {light}");
-                        gauges[gaugeIndex].setLight(light);
-                        gauges[gaugeIndex].setServo(1, Math.Min(Math.Max(500, s1), 2500));
-                        gauges[gaugeIndex].setServo(2, Math.Min(Math.Max(500, s2), 2500));
-                    }
+                    manager.SetGauge(gaugeType, gaugeIndex, (JObject)e.Message["data"]);
                     break;
             }
         }

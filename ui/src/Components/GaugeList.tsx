@@ -27,7 +27,7 @@ export const GaugeView = ({ gauge, index }: GaugeViewProps) => {
     <Card variant="outlined" sx={{ width: "100%" }}>
       <CardContent sx={{ "&:last-child": { paddingBottom: 2 } }}>
         <Typography variant="subtitle2" gutterBottom>
-          Gauge {index}
+          Gauge {index} &mdash; {gauge.gaugeType}
         </Typography>
         <Stack spacing={0.5}>
           <GaugeField label="Vendor ID" value={formatValue(gauge.vendorID)} />

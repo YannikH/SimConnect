@@ -21,6 +21,7 @@ class TrcGeneralGaugeNode extends LGraphNode {
 
   override onExecute(): void {
     const gaugeData = {
+      gaugeType: "General",
       gaugeIndex: this.properties["gaugeIndex"] ?? 0,
       Servo1: Math.round(this.getInputData(0, true) ?? 1500),
       Servo2: Math.round(this.getInputData(1, true) ?? 1500),
@@ -30,6 +31,30 @@ class TrcGeneralGaugeNode extends LGraphNode {
   }
 }
 TrcGeneralGaugeNode.title = "GeneralGauge";
+
+class TrcAltimeterNode extends LGraphNode {
+  title = "GeneralGauge";
+  constructor() {
+    super();
+    this.addInput("Altitude (ft)", "number");
+    this.addInput("Light", "number");
+  }
+
+  override onConnectionsChange(): void {
+    this.onExecute();
+  }
+
+  override onExecute(): void {
+    const gaugeData = {
+      gaugeType: "Altimeter",
+      gaugeIndex: 0,
+      AltFt: Math.round(this.getInputData(0, true) ?? 0),
+      light: Math.round(this.getInputData(1, true) ?? 0),
+    }
+    PostMessage({ type: "GaugeChanged", data: gaugeData});
+  }
+}
+TrcAltimeterNode.title = "Altimeter";
 
 class MathNode extends CustomNode {
   override onPropertyChanged(): void | boolean {
@@ -152,6 +177,10 @@ export const Load = () => {
   LiteGraph.registerNodeType(
     "TRC/GeneralGauge",
     TrcGeneralGaugeNode
+  );
+  LiteGraph.registerNodeType(
+    "TRC/Altimeter",
+    TrcAltimeterNode
   );
   LiteGraph.registerNodeType(
     "Math/Number",

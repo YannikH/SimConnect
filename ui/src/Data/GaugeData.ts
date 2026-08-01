@@ -1,6 +1,7 @@
 import * as z from "zod";
 
 export const GaugeSchemaV1 = z.object({
+  gaugeType: z.string(),
   productID: z.number(),
   vendorID: z.number(),
   versionNumber: z.number(),
