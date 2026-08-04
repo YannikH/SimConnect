@@ -53,7 +53,11 @@ namespace DcsBiosListener
             if (Core.trc0286 != null)
             {
                 await Core.trc0286.loadCalibration();
+                //Core.trc0286.initHeight();
+                await Core.trc0286.initParameters();
+                await Core.trc0286.setHeight(75000);
                 found.Add(Core.trc0286);
+                Console.WriteLine("Altimeter Found");
             }
             if (Core.trc0287 != null)
             {
@@ -154,8 +158,9 @@ namespace DcsBiosListener
             }
         }
 
-        private async Task ApplyGaugeUpdate(string gaugeType, int gaugeIndex, JObject data)
+        public async Task ApplyGaugeUpdate(string gaugeType, int gaugeIndex, JObject data)
         {
+            //Console.WriteLine($"Updating gauge {gaugeType}");
             if (gaugeIndex < 0 || gaugeIndex >= devices.Count) return;
             if (devices[gaugeIndex] == null) return;
             switch (gaugeType)
@@ -175,27 +180,27 @@ namespace DcsBiosListener
                 case "Altimeter":
                     if (devices[gaugeIndex] is dev0286 altimeter)
                     {
-                        //int result;
-                        //double pot1 = 0;
-                        //double pot2 = 0;
-                        //if ((result = await altimeter.requestPotmeter(0)) >= 0)
-                        //{
-                        //    pot1 = result;
-                        //}
-                        //if ((result = await altimeter.requestPotmeter(1)) >= 0)
-                        //{
-                        //    pot2 = result;
-                        //}
-                        //double pot10k = pot1 == 0 ? pot2 : pot1;
-                        ////double altFt = (pot10k * 10.0) + pot1k + (pot100ft / 10.0);
-                        //Console.WriteLine($"Updating {pot10k}");
-                        //int altLow = await altimeter.getAltiHigh();
-                        //Console.WriteLine($"AL {altLow}");
-                        //int light = data["light"].Value<int>();
-                        //altimeter.setLight(light);
-                        //altimeter.setServo(1, 1480 - 100);
-                        //altimeter.setServo(2, 1000);
-                        //const int desiredAlt = 4500;
+                        int light = data["light"].Value<int>();
+                        altimeter.setLight(light); 
+                        int alt = data["AltFt"].Value<int>();
+                        await altimeter.setHeight(alt);
+                    }
+                    break;
+                case "AltimeterAdjust":
+                    if (devices[gaugeIndex] is dev0286 altimeterAdjust)
+                    {
+                        int adjustment = data["adjust"].Value<int>();
+                        Console.WriteLine($"Adjust {adjustment}");
+                        if (adjustment == -1)
+                        {
+                            Console.WriteLine("ADJ Down");
+                            await altimeterAdjust.AdjustInternalHeightDown();
+                        }
+                        else if (adjustment == 1)
+                        {
+                            Console.WriteLine("ADJ Up");
+                            await altimeterAdjust.AdjustInternalHeightUp();
+                        }
                     }
                     break;
                 case "HeadingIndicator":

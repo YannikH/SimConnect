@@ -77,7 +77,13 @@ namespace DCSBiosTRC
                     int gaugeIndex = e.Message["data"]["gaugeIndex"].Value<int>();
                     try
                     {
-                        await manager.SetGauge(gaugeType, gaugeIndex, (JObject)e.Message["data"]);
+                        if (gaugeType == "AltimeterAdjust")
+                        {
+                            await manager.ApplyGaugeUpdate(gaugeType, gaugeIndex, (JObject)e.Message["data"]);
+                        } else
+                        {
+                            await manager.SetGauge(gaugeType, gaugeIndex, (JObject)e.Message["data"]);
+                        }
                     }
                     catch (System.IO.IOException ex)
                     {

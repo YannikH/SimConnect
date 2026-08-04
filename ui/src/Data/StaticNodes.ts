@@ -33,13 +33,19 @@ class TrcGeneralGaugeNode extends LGraphNode {
 TrcGeneralGaugeNode.title = "GeneralGauge";
 
 class TrcAltimeterNode extends LGraphNode {
-  title = "GeneralGauge";
+  title = "Altimeter";
   constructor() {
     super();
     const values = [...new Array(10)].map((_, index) => index);
     this.addWidget("combo","TRC Gauge", values[0], () => {}, { values, property: "gaugeIndex"} );
     this.addInput("Altitude (ft)", "number");
     this.addInput("Light", "number");
+    this.addWidget("button", "+1000ft", undefined, () => {
+      this.sendData(1);
+    });
+    this.addWidget("button", "-1000ft", undefined, () => {
+      this.sendData(-1);
+    });
   }
 
   override onConnectionsChange(): void {
@@ -47,12 +53,18 @@ class TrcAltimeterNode extends LGraphNode {
   }
 
   override onExecute(): void {
+    this.sendData(0);
+  }
+
+  sendData(adjust: number) {
     const gaugeData = {
-      gaugeType: "Altimeter",
+      gaugeType: adjust === 0 ? "Altimeter": "AltimeterAdjust",
       gaugeIndex: this.properties["gaugeIndex"] ?? 0,
       AltFt: Math.round(this.getInputData(0, true) ?? 0),
       light: Math.round(this.getInputData(1, true) ?? 0),
+      adjust
     }
+    console.log("sending ", gaugeData);
     PostMessage({ type: "GaugeChanged", data: gaugeData});
   }
 }
