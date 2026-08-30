@@ -5,7 +5,15 @@ import { LGraph, LGraphCanvas, LiteGraph } from "litegraph.js";
 import "litegraph.js/css/litegraph.css";
 import { OutputNode } from "../Data/NodeLoader";
 import { PostMessage } from "../Data/WebviewHandler";
-import { Button, Typography } from "@mui/material";
+import { Button, IconButton, styled, Typography } from "@mui/material";
+
+const TopBarButton = styled(Button)`
+  border: solid 1px white;
+  font-family: monospace;
+  background-color: #283f51;
+  padding: 0 5px;
+  color: white;
+`;
 
 class LGraphExtended extends LGraph {
   constructor() {
@@ -82,6 +90,11 @@ class LitegraphManager {
     PostMessage({ type: "LoadGraph", data: { name } });
   }
 
+  // Re-requests the graph list from disk (sidebar refresh button).
+  refreshGraphList() {
+    PostMessage({ type: "RequestGraphList" });
+  }
+
   // Opens a native "Save As" dialog so the user can save anywhere on disk.
   saveGraphDialog() {
     PostMessage({ type: "SaveGraphDialog", data: { graph: this.graph.serialize() } });
@@ -130,7 +143,12 @@ const GraphEditor = () => {
   return (
     <Flex $fullHeight $grow $hideOverflow $row>
       <Flex $column $fullHeight style={{ width: 200, borderRight: "1px solid #444" }}>
-        <Typography variant="h6">Graphs</Typography>
+        <Flex $row style={{ alignItems: "center", justifyContent: "space-between", paddingRight: 4 }}>
+          <Typography variant="h6" style={{padding: "0 5px"}}>Graphs</Typography>
+          <IconButton size="small" onClick={() => lgManager.refreshGraphList()} title="Refresh graph list">
+            ⟳
+          </IconButton>
+        </Flex>
         <Flex $column $grow style={{overflowY: "auto"}}>
           {graphNames.length === 0 && (
             <div style={{ padding: "8px", opacity: 0.6 }}>No saved graphs</div>
@@ -156,12 +174,12 @@ const GraphEditor = () => {
       </Flex>
       <Flex $column $grow $hideOverflow $fullHeight>
         <Flex $row $fullWidth style={{ height: "30px", gap: "8px", alignItems: "center", padding: "0 8px" }}>
-          <Button onClick={() => lgManager.loadGraphDialog()} variant="contained">
-            Load...
-          </Button>
-          <Button onClick={() => lgManager.saveGraphDialog()} variant="contained">
-            Save...
-          </Button>
+          <TopBarButton onClick={() => lgManager.loadGraphDialog()} variant="contained">
+            Load
+          </TopBarButton>
+          <TopBarButton onClick={() => lgManager.saveGraphDialog()} variant="contained">
+            Save As
+          </TopBarButton>
           {loadedName && <span>{loadedName}</span>}
         </Flex>
         <Flex $grow $hideOverflow $fullWidth>

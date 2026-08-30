@@ -74,6 +74,9 @@ namespace DCSBiosTRC
                     List<int> addresses = e.Message["data"].ToObject<List<int>>();
                     listenAddresses = addresses;
                     break;
+                case "RequestGraphList":
+                    SendGraphList();
+                    break;
                 case "LoadGraph":
                     {
                         string name = e.Message["data"]["name"].Value<string>();
@@ -134,15 +137,15 @@ namespace DCSBiosTRC
                     }
                 case "GaugeChanged":
                     string gaugeType = e.Message["data"]["gaugeType"].Value<string>();
-                    int gaugeIndex = e.Message["data"]["gaugeIndex"].Value<int>();
+                    int gaugeId = e.Message["data"]["gaugeId"].Value<int>();
                     try
                     {
                         if (gaugeType == "AltimeterAdjust")
                         {
-                            await manager.ApplyGaugeUpdate(gaugeType, gaugeIndex, (JObject)e.Message["data"]);
+                            await manager.ApplyGaugeUpdate(gaugeType, gaugeId, (JObject)e.Message["data"]);
                         } else
                         {
-                            await manager.SetGauge(gaugeType, gaugeIndex, (JObject)e.Message["data"]);
+                            await manager.SetGauge(gaugeType, gaugeId, (JObject)e.Message["data"]);
                         }
                     }
                     catch (System.IO.IOException ex)

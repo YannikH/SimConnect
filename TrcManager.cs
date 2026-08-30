@@ -104,15 +104,15 @@ namespace DcsBiosListener
             public bool IsRunning;
         }
 
-        public Task SetGauge(string gaugeType, int gaugeIndex, JObject data)
+        public Task SetGauge(string gaugeType, int gaugeId, JObject data)
         {
             GaugeUpdateState state;
             lock (pendingGaugeUpdates)
             {
-                if (!pendingGaugeUpdates.TryGetValue(gaugeIndex, out state))
+                if (!pendingGaugeUpdates.TryGetValue(gaugeId, out state))
                 {
                     state = new GaugeUpdateState();
-                    pendingGaugeUpdates[gaugeIndex] = state;
+                    pendingGaugeUpdates[gaugeId] = state;
                 }
                 state.GaugeType = gaugeType;
                 state.Data = data;
@@ -122,10 +122,10 @@ namespace DcsBiosListener
                 state.IsRunning = true;
             }
 
-            return PumpGaugeUpdates(gaugeIndex, state);
+            return PumpGaugeUpdates(gaugeId, state);
         }
 
-        private async Task PumpGaugeUpdates(int gaugeIndex, GaugeUpdateState state)
+        private async Task PumpGaugeUpdates(int gaugeId, GaugeUpdateState state)
         {
             try
             {
@@ -140,7 +140,7 @@ namespace DcsBiosListener
                         state.HasPending = false;
                     }
 
-                    await ApplyGaugeUpdate(gaugeType, gaugeIndex, data);
+                    await ApplyGaugeUpdate(gaugeType, gaugeId, data);
                     await Task.Delay(GaugeUpdateInterval);
 
                     lock (pendingGaugeUpdates)
@@ -158,36 +158,41 @@ namespace DcsBiosListener
             }
         }
 
-        public async Task ApplyGaugeUpdate(string gaugeType, int gaugeIndex, JObject data)
+        private devGeneral FindGauge(int gaugeId)
+        {
+            return devices.FirstOrDefault(d => d.ProductID == gaugeId);
+        }
+
+        public async Task ApplyGaugeUpdate(string gaugeType, int gaugeId, JObject data)
         {
             //Console.WriteLine($"Updating gauge {gaugeType}");
-            if (gaugeIndex < 0 || gaugeIndex >= devices.Count) return;
-            if (devices[gaugeIndex] == null) return;
+            devGeneral device = FindGauge(gaugeId);
+            if (device == null) return;
             switch (gaugeType)
             {
                 case "General":
-                    if (devices[gaugeIndex] is dev0200 gauge)
+                    if (device is dev0200 gauge)
                     {
                         int light = data["light"].Value<int>();
                         int s1 = data["Servo1"].Value<int>();
                         int s2 = data["Servo2"].Value<int>();
-                        Console.WriteLine($"Setting gauge {gaugeIndex} light to {light}");
+                        Console.WriteLine($"Setting gauge {gaugeId} light to {light}");
                         gauge.setLight(light);
                         gauge.setServo(1, Math.Min(Math.Max(500, s1), 2500));
                         gauge.setServo(2, Math.Min(Math.Max(500, s2), 2500));
                     }
                     break;
                 case "Altimeter":
-                    if (devices[gaugeIndex] is dev0286 altimeter)
+                    if (device is dev0286 altimeter)
                     {
                         int light = data["light"].Value<int>();
-                        altimeter.setLight(light); 
+                        altimeter.setLight(light);
                         int alt = data["AltFt"].Value<int>();
                         await altimeter.setHeight(alt);
                     }
                     break;
                 case "AltimeterAdjust":
-                    if (devices[gaugeIndex] is dev0286 altimeterAdjust)
+                    if (device is dev0286 altimeterAdjust)
                     {
                         int adjustment = data["adjust"].Value<int>();
                         Console.WriteLine($"Adjust {adjustment}");
@@ -204,7 +209,7 @@ namespace DcsBiosListener
                     }
                     break;
                 case "HeadingIndicator":
-                    if (devices[gaugeIndex] is dev0288 headingIndicator)
+                    if (device is dev0288 headingIndicator)
                     {
                         float direction = data["direction"].Value<float>();
                         await headingIndicator.setCompass(direction);
