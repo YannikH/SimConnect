@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Flex } from "./Structure";
 
 import "litegraph.js/css/litegraph.css";
@@ -19,10 +19,12 @@ type GraphEditorProps = {
 
 const GraphEditor = ({ loadedName }: GraphEditorProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [isRunning, setIsRunning] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    litegraphManager.setGraphDeactivatedListener(() => setIsRunning(false));
     litegraphManager.startCanvas(canvas);
     return () => litegraphManager.stop();
   }, []);
@@ -33,9 +35,31 @@ const GraphEditor = ({ loadedName }: GraphEditorProps) => {
         <TopBarButton onClick={() => litegraphManager.loadGraphDialog()} variant="contained">
           Load
         </TopBarButton>
+        <TopBarButton onClick={() => litegraphManager.saveGraph()} variant="contained">
+          Save
+        </TopBarButton>
         <TopBarButton onClick={() => litegraphManager.saveGraphDialog()} variant="contained">
           Save As
         </TopBarButton>
+        <TopBarButton
+          onClick={() => {
+            setIsRunning(true);
+            litegraphManager.runOnDevice();
+          }}
+          variant="contained"
+        >
+          Run on Device
+        </TopBarButton>
+        <TopBarButton
+          onClick={() => {
+            setIsRunning(false);
+            litegraphManager.stopOnDevice();
+          }}
+          variant="contained"
+        >
+          Stop
+        </TopBarButton>
+        {isRunning && <span>Running on device</span>}
         {loadedName && <span>{loadedName}</span>}
       </Flex>
       <Flex $grow $hideOverflow $fullWidth>

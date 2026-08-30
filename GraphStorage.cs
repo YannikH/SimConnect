@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace DCSBiosTRC
 {
-    class GraphStorage
+    public class GraphStorage
     {
         public string GetGraphsPath()
         {
@@ -26,7 +26,15 @@ namespace DCSBiosTRC
             return File.ReadAllText(GetGraphPath(name));
         }
 
-        private string GetGraphPath(string name)
+        // The one place a graph JSON gets written to disk anywhere in the app - used both for
+        // user-initiated Save As (an arbitrary user-chosen path) and for GraphRunner's own
+        // persisted "active graph" marker (a fixed path outside Documents/SimConnect).
+        public void WriteGraphFile(string path, string json)
+        {
+            File.WriteAllText(path, json);
+        }
+
+        public string GetGraphPath(string name)
         {
             return Path.Combine(GetGraphsPath(), SanitizeName(name) + ".json");
         }

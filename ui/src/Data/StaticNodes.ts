@@ -12,36 +12,24 @@ const addGaugeIdWidget = (node: LGraphNode) => {
   });
 };
 
-class TrcGeneralGaugeNode extends LGraphNode {
+// None of these node classes compute or send anything themselves anymore - the graph only
+// ever runs on the C# side (GraphRunner). They stay purely structural (inputs/outputs/widgets)
+// so they still appear in the editor and can be wired up; their displayed values come from
+// window.dcs.setNodeValues pushes, via the ordinary getOutputData()-reading onDrawForeground below.
+
+class TrcGeneralGaugeNode extends CustomNode {
   title = "GeneralGauge";
   constructor() {
     super();
-      addGaugeIdWidget(this);
-      // this.addInput("Pointer1", "number");
-      // this.addInput("Pointer2", "number");
-      this.addInput("Servo1", "number");
-      this.addInput("Servo2", "number");
-      this.addInput("Light", "number");
-  }
-
-  override onConnectionsChange(): void {
-    this.onExecute();
-  }
-
-  override onExecute(): void {
-    const gaugeData = {
-      gaugeType: "General",
-      gaugeId: Math.round(this.properties["gaugeId"] ?? 0),
-      Servo1: Math.round(this.getInputData(0, true) ?? 1500),
-      Servo2: Math.round(this.getInputData(1, true) ?? 1500),
-      light: Math.round(this.getInputData(2, true) ?? 0),
-    }
-    PostMessage({ type: "GaugeChanged", data: gaugeData});
+    addGaugeIdWidget(this);
+    this.addInput("Servo1", "number");
+    this.addInput("Servo2", "number");
+    this.addInput("Light", "number");
   }
 }
 TrcGeneralGaugeNode.title = "GeneralGauge";
 
-class TrcAltimeterNode extends LGraphNode {
+class TrcAltimeterNode extends CustomNode {
   title = "Altimeter";
   constructor() {
     super();
@@ -49,36 +37,28 @@ class TrcAltimeterNode extends LGraphNode {
     this.addInput("Altitude (ft)", "number");
     this.addInput("Light", "number");
     this.addWidget("button", "+1000ft", undefined, () => {
-      this.sendData(1);
+      this.sendAdjust(1);
     });
     this.addWidget("button", "-1000ft", undefined, () => {
-      this.sendData(-1);
+      this.sendAdjust(-1);
     });
   }
 
-  override onConnectionsChange(): void {
-    this.onExecute();
-  }
-
-  override onExecute(): void {
-    this.sendData(0);
-  }
-
-  sendData(adjust: number) {
+  // A manual one-off action, independent of graph execution (which only ever runs in C#).
+  sendAdjust(adjust: number) {
     const gaugeData = {
-      gaugeType: adjust === 0 ? "Altimeter": "AltimeterAdjust",
+      gaugeType: "AltimeterAdjust",
       gaugeId: Math.round(this.properties["gaugeId"] ?? 0),
       AltFt: Math.round(this.getInputData(0, true) ?? 0),
       light: Math.round(this.getInputData(1, true) ?? 0),
-      adjust
-    }
-    console.log("sending ", gaugeData);
-    PostMessage({ type: "GaugeChanged", data: gaugeData});
+      adjust,
+    };
+    PostMessage({ type: "GaugeChanged", data: gaugeData });
   }
 }
 TrcAltimeterNode.title = "Altimeter";
 
-class TrcHeadingIndicatorNode extends LGraphNode {
+class TrcHeadingIndicatorNode extends CustomNode {
   title = "HeadingIndicator";
   constructor() {
     super();
@@ -86,67 +66,28 @@ class TrcHeadingIndicatorNode extends LGraphNode {
     this.addInput("Direction", "number");
     this.addInput("Light", "number");
   }
-
-  override onConnectionsChange(): void {
-    this.onExecute();
-  }
-
-  override onExecute(): void {
-    const gaugeData = {
-      gaugeType: "HeadingIndicator",
-      gaugeId: Math.round(this.properties["gaugeId"] ?? 0),
-      direction: this.getInputData(0, true) ?? 0,
-      light: Math.round(this.getInputData(1, true) ?? 0),
-    }
-    PostMessage({ type: "GaugeChanged", data: gaugeData});
-  }
 }
 TrcHeadingIndicatorNode.title = "HeadingIndicator";
 
 class MathNode extends CustomNode {
-  override onPropertyChanged(): void | boolean {
-    this.onExecute();
-  }
-  override onConnectionsChange(): void {
-    this.onExecute();
-  }
-  override onExecute(): void {
-    const a = this.getInputData(0, true);
-    const b = this.getInputData(1, true);
-    // console.log("EXECUTING MATH NODE", a, b, this);
-    if (!a || !b) return;
-    const result = this.calculate(a, b);
-    // console.log(result);
-    this.setOutputData(0, result);
-    this.setDirtyCanvas(false, true);
-  }
   override onDrawForeground(ctx: CanvasRenderingContext2D): void {
     const value = this.getOutputData(0) ?? 0;
     this.writeOutputText(ctx, 0, `${value.toFixed(4)}`);
   }
-  calculate(a: number, b: number): number {
-    return a + b;
-  }
 }
 
-class Number extends LGraphNode {
+class Number extends CustomNode {
   title = "Number";
   constructor() {
     super();
-      this.addWidget("number","Value", this.properties["value"] ?? 0, (val: number) => {
-        this.setProperty("value", val);
-        this.setOutputData(0, val);
-      }, {property: "value"});
-      this.addOutput("Out", "number");
+    this.addWidget("number", "Value", this.properties["value"] ?? 0, (val: number) => {
+      this.setProperty("value", val);
+    }, { property: "value" });
+    this.addOutput("Out", "number");
   }
-  override onPropertyChanged(): void | boolean {
-    this.onExecute();
-  }
-  override onConnectionsChange(): void {
-    this.onExecute();
-  }
-  onExecute(): void {
-    this.setOutputData(0, this.properties["value"]);
+  override onDrawForeground(ctx: CanvasRenderingContext2D): void {
+    const value = this.getOutputData(0) ?? 0;
+    this.writeOutputText(ctx, 0, `${value.toFixed(4)}`);
   }
 }
 
@@ -168,9 +109,6 @@ class Subtract extends MathNode {
       this.addInput("B", "number");
       this.addOutput("Out", "number");
   }
-  calculate(a: number, b: number): number {
-    return a - b;
-  }
 }
 
 class Divide extends MathNode {
@@ -181,9 +119,6 @@ class Divide extends MathNode {
       this.addInput("B", "number");
       this.addOutput("Out", "number");
   }
-  calculate(a: number, b: number): number {
-    return a / b;
-  }
 }
 
 class Multiply extends MathNode {
@@ -193,9 +128,6 @@ class Multiply extends MathNode {
       this.addInput("A", "number");
       this.addInput("B", "number");
       this.addOutput("Out", "number");
-  }
-  calculate(a: number, b: number): number {
-    return a * b;
   }
 }
 
@@ -215,27 +147,6 @@ class Eval extends CustomNode {
       { property: "operation" }
     );
   }
-  override onPropertyChanged(): void | boolean {
-    this.onExecute();
-  }
-  override onConnectionsChange(): void {
-    this.onExecute();
-  }
-  override onExecute(): void {
-    const a = this.getInputData(0, true) ?? 0;
-    const b = this.getInputData(1, true) ?? 0;
-    const operation = this.properties["operation"] ?? "a * 2";
-    let result: unknown;
-    try {
-      result = new Function("a", "b", `"use strict"; return (${operation});`)(a, b);
-    } catch (e) {
-      console.log("Eval node failed to evaluate operation", operation, e);
-      return;
-    }
-    if (typeof result !== "number" || isNaN(result)) return;
-    this.setOutputData(0, result);
-    this.setDirtyCanvas(false, true);
-  }
   override onDrawForeground(ctx: CanvasRenderingContext2D): void {
     const value = this.getOutputData(0) ?? 0;
     this.writeOutputText(ctx, 0, `${value.toFixed(4)}`);
@@ -250,15 +161,6 @@ class Clamp extends MathNode {
       this.addInput("Min", "number");
       this.addInput("Max", "number");
       this.addOutput("Out", "number");
-  }
-  override onExecute(): void {
-    const inVal = this.getInputData(0, true);
-    const min = this.getInputData(1, true);
-    const max = this.getInputData(2, true);
-    if (!inVal || !min || !max) return;
-    const outVal = Math.max(Math.min(inVal, max), min);
-    this.setOutputData(0, outVal);
-    this.setDirtyCanvas(false, true);
   }
 }
 

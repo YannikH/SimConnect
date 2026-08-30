@@ -26,6 +26,8 @@ declare global {
       onBiosConfig: (name: string, data: unknown) => void;
       setGraphList: (names: string[]) => void;
       onGraphLoaded: (name: string, data: unknown) => void;
+      setNodeValues: (values: Array<[number, number, number]>) => void;
+      onGraphDeactivated: () => void;
     };
     trc: {
       setGauges: (data: unknown) => void;
@@ -78,11 +80,15 @@ const loadBiosConfigCache = () => {
   }
 };
 
+// Additive, like every other module that touches window.dcs - LitegraphManager (imported
+// below, via GraphEditor/Sidebar) already installs the real setGraphList/onGraphLoaded/
+// setNodeValues/onGraphDeactivated handlers before this line runs, since ES module imports
+// fully evaluate before this module's own top-level code does. A plain replacing object
+// literal here would silently reset those back to no-op stubs.
 window.dcs = {
+  ...window.dcs,
   setData: console.log,
   onBiosConfig: onBiosConfig,
-  setGraphList: console.log,
-  onGraphLoaded: console.log,
 };
 
 window.trc = {
