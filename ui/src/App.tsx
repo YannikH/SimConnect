@@ -1,10 +1,15 @@
+import { useEffect, useState } from "react";
 import {
   BiosAircraftSchemaV1,
 } from "./Data/BiosJson";
 import { Flex } from "./Components/Structure";
 import GraphEditor from "./Components/GraphEditor";
 import GaugeList from "./Components/GaugeList";
+import Sidebar from "./Components/Sidebar";
 import { LoadAircraftNodes } from "./Data/NodeLoader";
+import GamepadList from "./Components/GamepadList";
+import { litegraphManager } from "./Data/LitegraphManager";
+import type { PageId } from "./Data/Pages";
 
 const DCS_FILENAMES_KEY = 'DCS_FILE_NAMES';
 declare global {
@@ -90,13 +95,40 @@ if (window.chrome.webview) {
 
 function App() {
   loadBiosConfigCache();
+
+  const [graphNames, setGraphNames] = useState<string[]>([]);
+  const [loadedName, setLoadedName] = useState<string>("");
+  const [activePage, setActivePage] = useState<PageId>("graphs");
+
+  useEffect(() => {
+    litegraphManager.setGraphListListener(setGraphNames);
+    litegraphManager.setGraphLoadedListener(setLoadedName);
+  }, []);
+
   return (
     <Flex $column $fullHeight $fullWidth>
       <Flex $row $fullHeight>
-        <GraphEditor />
-        <Flex $column>
-          <GaugeList />
-        </Flex>
+        <Sidebar
+          activePage={activePage}
+          onNavigate={setActivePage}
+          graphNames={graphNames}
+          loadedName={loadedName}
+          onSelectGraph={(name) => litegraphManager.loadGraph(name)}
+          onRefresh={() => litegraphManager.refreshGraphList()}
+        />
+        {activePage === "graphs" && (
+          <>
+          <GraphEditor loadedName={loadedName} />
+          <Flex $grow $hideOverflow $fullHeight style={{ overflowY: "auto", padding: 8 }}>
+            <GaugeList />
+          </Flex>
+          </>
+        )}
+        {activePage === "gamepads" && (
+          <Flex $grow $hideOverflow $fullHeight style={{ overflowY: "auto", padding: 8 }}>
+            <GamepadList />
+          </Flex>
+        )}
       </Flex>
     </Flex>
   );
