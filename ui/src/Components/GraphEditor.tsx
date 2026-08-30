@@ -5,9 +5,7 @@ import { LGraph, LGraphCanvas, LiteGraph } from "litegraph.js";
 import "litegraph.js/css/litegraph.css";
 import { OutputNode } from "../Data/NodeLoader";
 import { PostMessage } from "../Data/WebviewHandler";
-import { Button } from "@mui/material";
-
-const CACHE_NAME = "BIOS_GRAPH_CACHE";
+import { Button, Typography } from "@mui/material";
 
 class LGraphExtended extends LGraph {
   constructor() {
@@ -51,19 +49,47 @@ class LGraphExtended extends LGraph {
 class LitegraphManager {
   readonly graph = new LGraphExtended();
   private canvas?: LGraphCanvas;
+  private onGraphListChanged?: (names: string[]) => void;
+  private onGraphLoaded?: (name: string) => void;
 
-  loadCache() {
-    const cache = localStorage.getItem(CACHE_NAME);
-    if (cache) {
-      console.log("LOADING", cache);
-      this.graph.configure(JSON.parse(cache));
-      this.graph.start(10);
-    }
+  constructor() {
+    window.dcs = {
+      ...window.dcs,
+      setGraphList: (names: string[]) => this.onGraphListChanged?.(names),
+      onGraphLoaded: (name: string, data: unknown) => {
+        this.applyLoadedGraph(data);
+        this.onGraphLoaded?.(name);
+      },
+    };
+  }
+
+  setGraphListListener(listener: (names: string[]) => void) {
+    this.onGraphListChanged = listener;
+  }
+
+  setGraphLoadedListener(listener: (name: string) => void) {
+    this.onGraphLoaded = listener;
+  }
+
+  applyLoadedGraph(data: unknown) {
+    this.graph.configure(data as never);
+    this.graph.start(10);
     this.graph.broadcastOutputs();
   }
 
-  saveCache() {
-    localStorage.setItem(CACHE_NAME, JSON.stringify(this.graph.serialize()));
+  // Loads a known graph from the Documents/SimConnect folder by name (sidebar click).
+  loadGraph(name: string) {
+    PostMessage({ type: "LoadGraph", data: { name } });
+  }
+
+  // Opens a native "Save As" dialog so the user can save anywhere on disk.
+  saveGraphDialog() {
+    PostMessage({ type: "SaveGraphDialog", data: { graph: this.graph.serialize() } });
+  }
+
+  // Opens a native "Open" dialog so the user can load from anywhere on disk.
+  loadGraphDialog() {
+    PostMessage({ type: "LoadGraphDialog" });
   }
 
   startCanvas(canvasEl: HTMLCanvasElement) {
@@ -81,7 +107,7 @@ class LitegraphManager {
       // return [];
     };
     this.graph.start(10);
-    this.loadCache();
+    this.graph.broadcastOutputs();
   }
   stop() {}
 }
@@ -89,23 +115,59 @@ class LitegraphManager {
 const GraphEditor = () => {
   const [lgManager] = useState<LitegraphManager>(() => new LitegraphManager());
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [graphNames, setGraphNames] = useState<string[]>([]);
+  const [loadedName, setLoadedName] = useState<string>("");
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    lgManager.setGraphListListener(setGraphNames);
+    lgManager.setGraphLoadedListener(setLoadedName);
     lgManager.startCanvas(canvas);
     return () => lgManager.stop();
   }, [lgManager]);
 
   return (
-    <Flex $fullHeight $grow $hideOverflow $column>
-      <Flex $row $fullWidth style={{height: "30px"}}>
-        <Button onClick={() => lgManager.loadCache()} variant="contained">Load</Button>
-        <Button onClick={() => lgManager.saveCache()} variant="contained">Save</Button>
+    <Flex $fullHeight $grow $hideOverflow $row>
+      <Flex $column $fullHeight style={{ width: 200, borderRight: "1px solid #444" }}>
+        <Typography variant="h6">Graphs</Typography>
+        <Flex $column $grow style={{overflowY: "auto"}}>
+          {graphNames.length === 0 && (
+            <div style={{ padding: "8px", opacity: 0.6 }}>No saved graphs</div>
+          )}
+          {graphNames.map((name) => (
+            <div
+              key={name}
+              onClick={() => lgManager.loadGraph(name)}
+              title={name}
+              style={{
+                padding: "6px 8px",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                background: name === loadedName ? "rgba(128,128,128,0.3)" : "transparent",
+              }}
+            >
+              {name}
+            </div>
+          ))}
+        </Flex>
       </Flex>
-      <Flex $grow $hideOverflow $fullWidth>
-        <Flex $fullWidth $fullHeight>
-          <canvas ref={canvasRef} width="1024" height="720" />
+      <Flex $column $grow $hideOverflow $fullHeight>
+        <Flex $row $fullWidth style={{ height: "30px", gap: "8px", alignItems: "center", padding: "0 8px" }}>
+          <Button onClick={() => lgManager.loadGraphDialog()} variant="contained">
+            Load...
+          </Button>
+          <Button onClick={() => lgManager.saveGraphDialog()} variant="contained">
+            Save...
+          </Button>
+          {loadedName && <span>{loadedName}</span>}
+        </Flex>
+        <Flex $grow $hideOverflow $fullWidth>
+          <Flex $fullWidth $fullHeight>
+            <canvas ref={canvasRef} width="1024" height="720" />
+          </Flex>
         </Flex>
       </Flex>
     </Flex>

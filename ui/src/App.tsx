@@ -19,6 +19,8 @@ declare global {
     dcs: {
       setData: (address: number, data: number) => void;
       onBiosConfig: (name: string, data: unknown) => void;
+      setGraphList: (names: string[]) => void;
+      onGraphLoaded: (name: string, data: unknown) => void;
     };
     trc: {
       setGauges: (data: unknown) => void;
@@ -74,6 +76,8 @@ const loadBiosConfigCache = () => {
 window.dcs = {
   setData: console.log,
   onBiosConfig: onBiosConfig,
+  setGraphList: console.log,
+  onGraphLoaded: console.log,
 };
 
 window.trc = {

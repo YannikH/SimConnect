@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Windows.Forms;
 using TrcSdkLib;
 
 namespace DCSBiosTRC
@@ -67,11 +68,70 @@ namespace DCSBiosTRC
                     var loader = new DataLoader();
                     loader.loadBiosJsons(webView);
                     manager.RebuildGaugeList();
+                    SendGraphList();
                     break;
                 case "OutputsChanged":
                     List<int> addresses = e.Message["data"].ToObject<List<int>>();
                     listenAddresses = addresses;
                     break;
+                case "LoadGraph":
+                    {
+                        string name = e.Message["data"]["name"].Value<string>();
+                        try
+                        {
+                            string graphJson = new GraphStorage().LoadGraph(name);
+                            string script = $"window.dcs.onGraphLoaded({JsonConvert.SerializeObject(name)}, {graphJson})";
+                            uiControl?.BeginInvoke((Action)(() => { webView?.ExecuteScriptAsync(script); }));
+                        }
+                        catch (IOException ex)
+                        {
+                            Console.WriteLine($"Failed to load graph '{name}': {ex.Message}");
+                        }
+                        break;
+                    }
+                case "SaveGraphDialog":
+                    {
+                        string graphJson = e.Message["data"]["graph"].ToString(Formatting.None);
+                        uiControl?.BeginInvoke((Action)(() =>
+                        {
+                            using (var dialog = new SaveFileDialog
+                            {
+                                InitialDirectory = new GraphStorage().GetGraphsPath(),
+                                Filter = "Graph files (*.json)|*.json|All files (*.*)|*.*",
+                                DefaultExt = "json",
+                                AddExtension = true,
+                            })
+                            {
+                                if (dialog.ShowDialog(uiControl.FindForm()) == DialogResult.OK)
+                                {
+                                    File.WriteAllText(dialog.FileName, graphJson);
+                                    SendGraphList();
+                                }
+                            }
+                        }));
+                        break;
+                    }
+                case "LoadGraphDialog":
+                    {
+                        uiControl?.BeginInvoke((Action)(() =>
+                        {
+                            using (var dialog = new OpenFileDialog
+                            {
+                                InitialDirectory = new GraphStorage().GetGraphsPath(),
+                                Filter = "Graph files (*.json)|*.json|All files (*.*)|*.*",
+                            })
+                            {
+                                if (dialog.ShowDialog(uiControl.FindForm()) == DialogResult.OK)
+                                {
+                                    string name = Path.GetFileNameWithoutExtension(dialog.FileName);
+                                    string graphJson = File.ReadAllText(dialog.FileName);
+                                    string script = $"window.dcs.onGraphLoaded({JsonConvert.SerializeObject(name)}, {graphJson})";
+                                    webView?.ExecuteScriptAsync(script);
+                                }
+                            }
+                        }));
+                        break;
+                    }
                 case "GaugeChanged":
                     string gaugeType = e.Message["data"]["gaugeType"].Value<string>();
                     int gaugeIndex = e.Message["data"]["gaugeIndex"].Value<int>();
@@ -91,6 +151,14 @@ namespace DCSBiosTRC
                     }
                     break;
             }
+        }
+
+        private void SendGraphList()
+        {
+            if (webView == null) return;
+            string json = JsonConvert.SerializeObject(new GraphStorage().GetGraphNames());
+            string script = $"window.dcs.setGraphList({json})";
+            uiControl?.BeginInvoke((Action)(() => { webView?.ExecuteScriptAsync(script); }));
         }
     }
 }
