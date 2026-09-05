@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, Stack, Typography } from "@mui/material";
 import { Flex } from "./Structure";
-import { GaugeListSchemaV1, type GaugeListV1, type GaugeV1 } from "../Data/GaugeData";
+import { type GaugeListV1, type GaugeV1 } from "../Data/GaugeData";
+import { gaugeListManager } from "../Data/GaugeListManager";
 
 const formatValue = (value: number) =>
   `${value} (0x${value.toString(16).padStart(4, "0")})`;
@@ -43,17 +44,8 @@ const GaugeList = () => {
   const [gauges, setGauges] = useState<GaugeListV1>([]);
 
   useEffect(() => {
-    window.trc = {
-      ...window.trc,
-      setGauges: (data: unknown) => {
-        const result = GaugeListSchemaV1.safeParse(data);
-        if (!result.success) {
-          console.error("Failed to parse gauge list", data, result.error);
-          return;
-        }
-        setGauges(result.data);
-      },
-    };
+    gaugeListManager.setListener(setGauges);
+    return () => gaugeListManager.setListener(undefined);
   }, []);
 
   return (

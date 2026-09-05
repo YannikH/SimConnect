@@ -11,6 +11,7 @@ import GamepadList from "./Components/GamepadList";
 import DebugLog from "./Components/DebugLog";
 import { litegraphManager } from "./Data/LitegraphManager";
 import { debugLogManager } from "./Data/DebugLogManager";
+import { gaugeListManager } from "./Data/GaugeListManager";
 import type { PageId } from "./Data/Pages";
 
 const DCS_FILENAMES_KEY = 'DCS_FILE_NAMES';
@@ -114,6 +115,7 @@ function App() {
     litegraphManager.setGraphListListener(setGraphNames);
     litegraphManager.setGraphLoadedListener(setLoadedName);
     debugLogManager.attach();
+    gaugeListManager.attach();
   }, []);
 
   return (
