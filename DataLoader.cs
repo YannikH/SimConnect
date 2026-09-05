@@ -34,7 +34,7 @@ namespace DCSBiosTRC
 
         public string getConfigsPath()
         {
-            return Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "DCS_SimConnect";
+            return Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "/SimConnect";
         }
 
         public void loadConfigJsons(WebView2 view)

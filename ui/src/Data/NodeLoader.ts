@@ -48,8 +48,10 @@ export class OutputNode extends CustomNode {
   }
 
   override onDrawForeground(ctx: CanvasRenderingContext2D): void {
-    if (this.valueRaw) this.writeOutputText(ctx, 0, `${this.valueRaw}`);
-    if (this.value) this.writeOutputText(ctx, 2, `${this.value.toFixed(4)}`);
+    const valueRaw = this.valueRaw ?? 0;
+    const value = this.value ?? 0;
+    this.writeOutputText(ctx, 0, `${valueRaw}`);
+    this.writeOutputText(ctx, 2, `${value.toFixed(4)}`);
   }
 }
 
