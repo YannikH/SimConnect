@@ -67,6 +67,26 @@ namespace DCSBiosTRC
                     webView?.ExecuteScriptAsync(script);
                 }));
             };
+
+            // Debug visibility into what actually reaches hardware, after rate limiting -
+            // shown in-app since a release build has no attached console and DevTools aren't
+            // reliably available.
+            manager.OnGaugeUpdateApplied += (s, update) =>
+            {
+                var entry = new
+                {
+                    time = update.Timestamp.ToString("HH:mm:ss.fff"),
+                    gaugeType = update.GaugeType,
+                    gaugeId = update.GaugeId,
+                    data = update.Data,
+                };
+                string json = JsonConvert.SerializeObject(entry);
+                string script = $"window.trc.onGaugeUpdate({json})";
+                uiControl?.BeginInvoke((Action)(() =>
+                {
+                    webView?.ExecuteScriptAsync(script);
+                }));
+            };
         }
         public async void WebviewDataReceived(object sender, WebviewDataEventArgs e)
         {

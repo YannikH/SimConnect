@@ -8,7 +8,9 @@ import GaugeList from "./Components/GaugeList";
 import Sidebar from "./Components/Sidebar";
 import { LoadAircraftNodes } from "./Data/NodeLoader";
 import GamepadList from "./Components/GamepadList";
+import DebugLog from "./Components/DebugLog";
 import { litegraphManager } from "./Data/LitegraphManager";
+import { debugLogManager } from "./Data/DebugLogManager";
 import type { PageId } from "./Data/Pages";
 
 const DCS_FILENAMES_KEY = 'DCS_FILE_NAMES';
@@ -31,6 +33,7 @@ declare global {
     };
     trc: {
       setGauges: (data: unknown) => void;
+      onGaugeUpdate: (data: unknown) => void;
     };
   }
 }
@@ -93,6 +96,7 @@ window.dcs = {
 
 window.trc = {
   setGauges: console.log,
+  onGaugeUpdate: console.log,
 }
 
 if (window.chrome.webview) {
@@ -109,6 +113,7 @@ function App() {
   useEffect(() => {
     litegraphManager.setGraphListListener(setGraphNames);
     litegraphManager.setGraphLoadedListener(setLoadedName);
+    debugLogManager.attach();
   }, []);
 
   return (
@@ -133,6 +138,11 @@ function App() {
         {activePage === "gamepads" && (
           <Flex $grow $hideOverflow $fullHeight style={{ overflowY: "auto", padding: 8 }}>
             <GamepadList />
+          </Flex>
+        )}
+        {activePage === "debug" && (
+          <Flex $grow $hideOverflow $fullHeight>
+            <DebugLog />
           </Flex>
         )}
       </Flex>
